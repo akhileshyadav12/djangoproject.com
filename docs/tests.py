@@ -1,5 +1,6 @@
 import datetime
 import os
+from http import HTTPStatus
 from operator import attrgetter
 from pathlib import Path
 
@@ -7,8 +8,9 @@ from django.conf import settings
 from django.contrib.sites.models import Site
 from django.template import Context, Template
 from django.test import TestCase
-from django.urls import set_urlconf
+from django.urls import reverse, set_urlconf
 
+from djangoproject.urls import www as www_urls
 from releases.models import Release
 
 from .models import Document, DocumentRelease
@@ -121,6 +123,30 @@ class ManagerTests(TestCase):
         self.assertEqual(list(get('1.0')), ['ar', 'en', 'sv'])
         self.assertEqual(list(get('2.0')), ['en'])
         self.assertEqual(list(get('3.0')), [])
+
+
+class RedirectsTests(TestCase):
+
+    @classmethod
+    def tearDownClass(cls):
+        # cleanup URLconfs changed by django-hosts
+        set_urlconf(None)
+        super().tearDownClass()
+
+    def test_team_url(self):
+        # This URL is linked from the docs.
+        self.assertEqual('/foundation/teams/', reverse('members:teams', urlconf=www_urls))
+
+    def test_internals_team(self):
+        response = self.client.get(
+            '/en/dev/internals/team/',
+            HTTP_HOST='docs.djangoproject.dev:8000',
+        )
+        self.assertRedirects(
+            response,
+            'https://www.djangoproject.com/foundation/teams/',
+            status_code=HTTPStatus.MOVED_PERMANENTLY,
+        )
 
 
 class SearchFormTestCase(TestCase):
@@ -265,12 +291,32 @@ class UpdateDocTests(TestCase):
 
 
 class SitemapTests(TestCase):
+    fixtures = ['doc_test_fixtures']
+
+    @classmethod
+    def tearDownClass(cls):
+        # cleanup URLconfs changed by django-hosts
+        set_urlconf(None)
+        super().tearDownClass()
+
+    def test_sitemap_index(self):
+        response = self.client.get('/sitemap.xml', HTTP_HOST='docs.djangoproject.dev:8000')
+        self.assertContains(response, '<sitemap>', count=2)
+        self.assertContains(response, '<loc>http://docs.djangoproject.dev:8000/sitemap-en.xml</loc>')
 
     def test_sitemap(self):
         doc_release = DocumentRelease.objects.create()
         document = Document.objects.create(release=doc_release)
-        sitemap = DocsSitemap()
+        sitemap = DocsSitemap('en')
         urls = sitemap.get_urls()
         self.assertEqual(len(urls), 1)
         url_info = urls[0]
         self.assertEqual(url_info['location'], document.get_absolute_url())
+
+    def test_sitemap_404(self):
+        response = self.client.get('/sitemap-xx.xml', HTTP_HOST='docs.djangoproject.dev:8000')
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(
+            response.context['exception'],
+            "No sitemap available for section: 'xx'"
+        )
