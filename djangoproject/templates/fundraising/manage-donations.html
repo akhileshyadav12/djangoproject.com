@@ -65,6 +65,17 @@
   {% else %}
 </form>
   {% endif %}
+  {% if onetime_donations %}
+  <hr />
+    <h2>Your past One-time donations</h2>
+    <ul>
+    {% for donation in onetime_donations %}
+      <li>
+        You have donated ${{ donation.subscription_amount }} on {{ donation.created|date:"N jS, Y \a\t P" }}
+      </li>
+    {% endfor %}
+    </ul>
+  {% endif %}
 {% endblock %}
 
 {% block content-extra %}{% endblock %}
