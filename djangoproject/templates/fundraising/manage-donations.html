@@ -71,7 +71,7 @@
     <ul>
     {% for donation in onetime_donations %}
       <li>
-        You have donated ${{ donation.subscription_amount }} on {{ donation.created|date:"N jS, Y \a\t P" }}
+        ${{ donation.subscription_amount }} on {{ donation.created|date:"N jS, Y \a\t P" }}
       </li>
     {% endfor %}
     </ul>

@@ -80,7 +80,7 @@ def thank_you(request, donation):
 def manage_donations(request, hero):
     hero = get_object_or_404(DjangoHero, pk=hero)
     recurring_donations = hero.donation_set.exclude(stripe_subscription_id='')
-    onetime_donations = hero.donation_set.filter(stripe_subscription_id='', interval="onetime")
+    onetime_donations = hero.donation_set.filter(stripe_subscription_id='', interval='onetime')
 
     ModifyDonationsFormset = modelformset_factory(Donation, form=DonationForm, extra=0)
 

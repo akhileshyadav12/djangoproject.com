@@ -69,3 +69,25 @@ class TestInKindDonor(TestCase):
     def test_display_name(self):
         donor = InKindDonor(name='Hero')
         self.assertEqual(donor.display_name, 'Hero')
+
+
+class TestOnetimeDonationDjangoHero(TestCase):
+    def setUp(self):
+        kwargs = {
+            'approved': True,
+            'is_visible': True,
+        }
+
+        donation_args = {
+            'interval': 'onetime',
+            'subscription_amount': 5,
+            'stripe_subscription_id': '',
+        }
+        self.dh = DjangoHero.objects.create(**kwargs)
+        otd = self.dh.donation_set.create(**donation_args)
+        otd.payment_set.create(amount='5', stripe_charge_id='c1')
+        otd1 = self.dh.donation_set.create(**donation_args)
+        otd1.payment_set.create(amount='5', stripe_charge_id='c2')
+
+    def test_one_time_donations(self):
+        self.assertEqual(self.dh.donation_set.filter(stripe_subscription_id='', interval='onetime'), 2)
