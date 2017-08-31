@@ -90,4 +90,4 @@ class TestOnetimeDonationDjangoHero(TestCase):
         otd1.payment_set.create(amount='5', stripe_charge_id='c2')
 
     def test_one_time_donations(self):
-        self.assertEqual(self.dh.donation_set.filter(stripe_subscription_id='', interval='onetime'), 2)
+        self.assertEqual(self.dh.donation_set.filter(stripe_subscription_id='', interval='onetime').count(), 2)
